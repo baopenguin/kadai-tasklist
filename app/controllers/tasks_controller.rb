@@ -1,9 +1,12 @@
 class TasksController < ApplicationController
   before_action :set_task, only: [:show, :edit, :update, :destroy]
-  before_action :require_user_logged_in, only: [:index, :show]
+  before_action :require_user_logged_in
+  before_action :authenticate_user, only:[:show, :create, :edit, :update, :destroy]
+  
+  include SessionsHelper
   
   def index
-    @tasks = Task.all
+    @tasks = current_user.tasks
   end
   
   def show
@@ -15,6 +18,7 @@ class TasksController < ApplicationController
   
   def create
     @task = Task.new(task_params)
+    @task.user_id = current_user.id
     
     if  @task.save
       flash[:success] = 'Taskが正常に作成されました。'
@@ -53,5 +57,11 @@ class TasksController < ApplicationController
   
   def task_params
     params.require(:task).permit(:content, :status)
+  end
+  
+  def authenticate_user
+    if current_user.id != @task.user_id
+      redirect_to root_url
+    end
   end
 end
